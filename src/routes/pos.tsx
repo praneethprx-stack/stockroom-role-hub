@@ -24,7 +24,7 @@ import { db } from "@/lib/db";
 import { computeTotals, useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
 import { completeSale, getSettings } from "@/lib/sales";
-import { downloadInvoice, printA4, printThermal, whatsappShare } from "@/lib/invoice";
+import { downloadInvoice, printThermal } from "@/lib/invoice";
 import { inr, round2 } from "@/lib/format";
 import type { Customer, PaymentMethod, Product, Sale, Settings } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -756,14 +756,8 @@ function PosPage() {
               <Button size="sm" variant="outline" onClick={() => printThermal(lastSale, settings)}>
                 <Printer className="size-4" /> Thermal
               </Button>
-              <Button size="sm" variant="outline" onClick={() => printA4(lastSale, settings)}>
-                <Barcode className="size-4" /> A4 Print
-              </Button>
               <Button size="sm" variant="outline" onClick={() => downloadInvoice(lastSale, settings)}>
                 <Download className="size-4" /> PDF
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => whatsappShare(lastSale, settings)}>
-                <Share2 className="size-4" /> WhatsApp
               </Button>
             </div>
           </div>
