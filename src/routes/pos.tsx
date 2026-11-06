@@ -669,11 +669,6 @@ function PosPage() {
           <span className="font-semibold">Grand Total</span>
           <span className="text-2xl font-extrabold text-primary">{inr(totals.total)}</span>
         </div>
-        {totals.savings > 0 && (
-          <p className="mt-2 text-center text-xs text-success">
-            Customer saved {inr(totals.savings)} on this bill
-          </p>
-        )}
 
         <Dialog open={payOpen} onOpenChange={setPayOpen}>
           <DialogTrigger asChild>
