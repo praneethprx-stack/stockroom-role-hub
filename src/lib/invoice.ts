@@ -244,7 +244,7 @@ export function thermalHtml(sale: Sale, s: Settings) {
   <div class="b" style="font-size:13px;margin:3px 0">Name : &nbsp; ${sale.customerName || "Walk-in Cash"}</div>
   <div class="s"></div>
   <table>
-    <tr><th>Item</th><th>Mrp</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+    <tr><th>Item</th><th>MRP</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
     <tr><td colspan="5"><div class="s"></div></td></tr>
     ${sale.items
       .map((i) => `<tr><td colspan="5">${i.name.toUpperCase()}</td></tr><tr><td></td><td class="r">${Math.round(i.mrp || i.price)}</td><td class="r">${i.qty.toFixed(3)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`)
@@ -253,7 +253,6 @@ export function thermalHtml(sale: Sale, s: Settings) {
   ${dash}
   <table>
     ${kv("Bill Amount", sale.total.toFixed(2), "b")}
-    ${savedAmt(sale) > 0 ? kv("You Have Saved", savedAmt(sale).toFixed(2), "b") : ""}
   </table>
   ${dash}
   <table class="big">${kv("G.Total", sale.total.toFixed(2))}</table>
@@ -268,6 +267,7 @@ export function thermalHtml(sale: Sale, s: Settings) {
     ${pays.map((x) => `<tr><td>${x.method}</td><td class="r">${x.amount.toFixed(2)}</td></tr>`).join("")}
     ${sale.change > 0 ? `<tr><td>Change Due</td><td class="r">${sale.change.toFixed(2)}</td></tr>` : ""}
   </table>
+  ${savedAmt(sale) > 0 ? `${dash}<table class="big">${kv("You Have Saved", savedAmt(sale).toFixed(2))}</table>` : ""}
   <table style="margin-top:4px">
     <tr class="b"><td>CGST</td><td class="r">SGST</td><td class="r">CESS</td><td class="r">Base Amt</td><td class="r">Tax Amt</td></tr>
     <tr><td colspan="5"><div class="d" style="margin:1px 0"></div></td></tr>
