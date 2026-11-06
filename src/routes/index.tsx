@@ -46,6 +46,8 @@ export const Route = createFileRoute("/")({
         content: "Live grocery shop dashboard: sales, profit, stock alerts and business charts.",
       },
       { property: "og:title", content: "Dashboard — G.K Mart" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Live grocery shop dashboard: sales, profit, stock alerts and business charts.",

@@ -65,31 +65,32 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
   });
   doc.line(L, 90, R, 90);
 
-  // Items table box with column rules down to totals
-  const top = 92;
-  const bottom = 175;
-  const cols = [L, 20, 104, 120, 136, 152, 168, R]; // # | desc | HSN | QTY | MRP | RATE | AMOUNT
-  doc.rect(L, top, R - L, bottom - top);
-  doc.line(L, top + 8, R, top + 8);
-  cols.slice(1, -1).forEach((x) => doc.line(x, top, x, bottom));
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  const heads = ["#", "DESCRIPTION", "HSN", "QTY", "MRP", "RATE", "AMOUNT"];
-  heads.forEach((h, i) => doc.text(h, (cols[i]! + cols[i + 1]!) / 2, top + 5.5, { align: "center" }));
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  let y = top + 14;
-  sale.items.forEach((it, idx) => {
-    const lines = doc.splitTextToSize(`${it.name}${it.gst ? ` (GST ${it.gst}%)` : ""}`, cols[2]! - cols[1]! - 3) as string[];
-    if (y + lines.length * 4.5 > bottom - 2) return;
-    doc.text(String(idx + 1), (cols[0]! + cols[1]!) / 2, y, { align: "center" });
-    doc.text(lines, cols[1]! + 2, y);
-    doc.text(it.hsn || "", (cols[2]! + cols[3]!) / 2, y, { align: "center" });
-    doc.text(`${it.qty}`, (cols[3]! + cols[4]!) / 2, y, { align: "center" });
-    doc.text((it.mrp || it.price).toFixed(2), cols[5]! - 2, y, { align: "right" });
-    doc.text(it.price.toFixed(2), cols[6]! - 2, y, { align: "right" });
-    doc.text(it.total.toFixed(2), cols[7]! - 3, y, { align: "right" });
-    y += lines.length * 4.5 + 1.5;
+  // Paginate instead of dropping rows that do not fit on the first page.
+  let tableBottom = 92;
+  const amountColumn = 168;
+  autoTable(doc, {
+    startY: 92,
+    margin: { left: L, right: L, top: 12, bottom: 15 },
+    theme: "grid",
+    head: [["S.No", "DESCRIPTION", "HSN", "QTY", "MRP", "RATE", "AMOUNT"]],
+    body: sale.items.map((it, idx) => [
+      String(idx + 1), `${it.name}${it.gst ? ` (GST ${it.gst}%)` : ""}`,
+      it.hsn || "", String(it.qty), (it.mrp || it.price).toFixed(2),
+      it.price.toFixed(2), it.total.toFixed(2),
+    ]),
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 1.5, textColor: BLACK, lineColor: BLACK, lineWidth: 0.2 },
+    headStyles: { fillColor: [255, 255, 255], textColor: BLACK, fontStyle: "bold", halign: "center", fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 12, halign: "center" },
+      1: { cellWidth: 80 },
+      2: { cellWidth: 16, halign: "center" },
+      3: { cellWidth: 16, halign: "center" },
+      4: { cellWidth: 16, halign: "right" },
+      5: { cellWidth: 16, halign: "right" },
+      6: { cellWidth: 30, halign: "right" },
+    },
+    rowPageBreak: "avoid",
+    didDrawPage: ({ cursor }) => { tableBottom = cursor?.y ?? tableBottom; },
   });
 
   // Totals
@@ -102,22 +103,33 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
     ...(sale.igst ? [["IGST", sale.igst.toFixed(2), false] as [string, string, boolean]] : []),
     ["Round Off", sale.roundOff.toFixed(2), false],
   ];
-  const tTop = bottom;
   const tH = rows.length * 5.5 + 12;
+  const terms = [
+    "Goods once sold will not be taken back.",
+    ...(savedAmt(sale) > 0 ? [`You saved Rs ${savedAmt(sale).toFixed(2)} on this bill.`] : []),
+    ...(s.footerNote ? [s.footerNote] : []),
+  ];
+  const termLines = terms.flatMap((t) => doc.splitTextToSize(`* ${t}`, R - L - 4) as string[]);
+  const termH = 9 + termLines.length * 4.5;
+  let tTop = tableBottom;
+  if (tTop + tH + 9 + termH + 28 > 282) {
+    doc.addPage();
+    tTop = 12;
+  }
   doc.rect(L, tTop, R - L, tH);
-  doc.line(cols[6]!, tTop, cols[6]!, tTop + tH);
-  doc.line(cols[6]!, tTop + tH - 8, R, tTop + tH - 8);
+  doc.line(amountColumn, tTop, amountColumn, tTop + tH);
+  doc.line(amountColumn, tTop + tH - 8, R, tTop + tH - 8);
   let ty = tTop + 5;
   doc.setFontSize(10);
   rows.forEach(([k, v]) => {
     doc.setFont("helvetica", "normal");
-    doc.text(k, cols[6]! - 3, ty, { align: "right" });
+    doc.text(k, amountColumn - 3, ty, { align: "right" });
     doc.text(v, R - 3, ty, { align: "right" });
     ty += 5.5;
   });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Invoice Amount", cols[6]! - 3, tTop + tH - 2.5, { align: "right" });
+  doc.text("Invoice Amount", amountColumn - 3, tTop + tH - 2.5, { align: "right" });
   doc.text(sale.total.toFixed(2), R - 3, tTop + tH - 2.5, { align: "right" });
 
   // Words
@@ -129,19 +141,13 @@ export function buildInvoicePdf(sale: Sale, s: Settings) {
   by += 9;
 
   // Terms
-  const terms = [
-    "Goods once sold will not be taken back.",
-    ...(savedAmt(sale) > 0 ? [`You saved Rs ${savedAmt(sale).toFixed(2)} on this bill.`] : []),
-    ...(s.footerNote ? [s.footerNote] : []),
-  ];
-  const termH = 9 + terms.length * 4.5;
   doc.rect(L, by, R - L, termH);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text("TERMS AND CONDITIONS:", 14, by + 5.5);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  terms.forEach((t, i) => doc.text(`* ${t}`, 14, by + 10 + i * 4.5));
+  termLines.forEach((t, i) => doc.text(t, 14, by + 10 + i * 4.5));
   by += termH;
 
   // Wishes | signatory
@@ -244,10 +250,10 @@ export function thermalHtml(sale: Sale, s: Settings) {
   <div class="b" style="font-size:13px;margin:3px 0">Name : &nbsp; ${sale.customerName || "Walk-in Cash"}</div>
   <div class="s"></div>
   <table>
-    <tr><th>Item</th><th>MRP</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
-    <tr><td colspan="5"><div class="s"></div></td></tr>
+    <tr><th>S.No</th><th>Item</th><th>MRP</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+    <tr><td colspan="6"><div class="s"></div></td></tr>
     ${sale.items
-      .map((i) => `<tr><td colspan="5">${i.name.toUpperCase()}</td></tr><tr><td></td><td class="r">${Math.round(i.mrp || i.price)}</td><td class="r">${i.qty.toFixed(3)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`)
+      .map((i, idx) => `<tr><td>${idx + 1}</td><td colspan="5">${i.name.toUpperCase()}</td></tr><tr><td></td><td></td><td class="r">${Math.round(i.mrp || i.price)}</td><td class="r">${i.qty.toFixed(3)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`)
       .join("")}
   </table>
   ${dash}

@@ -53,6 +53,7 @@ import { EmptyState, Loader } from "@/components/common/states";
 import { CameraScanner } from "@/components/pos/camera-scanner";
 import { UpiQrPanel } from "@/components/pos/upi-qr-panel";
 import { cn } from "@/lib/utils";
+import { BILL_LIMIT_MESSAGE, MAX_BILL_ITEMS } from "@/lib/bill-limits";
 
 export const Route = createFileRoute("/pos")({
   head: () => ({
@@ -63,6 +64,8 @@ export const Route = createFileRoute("/pos")({
         content: "Fast touch-friendly grocery billing with barcode scanning and GST invoices.",
       },
       { property: "og:title", content: "POS Billing — G.K Mart" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Fast touch-friendly grocery billing with barcode scanning and GST invoices.",
@@ -157,6 +160,10 @@ function PosPage() {
   });
 
   const addProduct = (p: Product) => {
+    if (cart.items.length >= MAX_BILL_ITEMS && !cart.items.some((i) => i.productId === p.id)) {
+      toast.error(BILL_LIMIT_MESSAGE);
+      return false;
+    }
     if (p.stock <= 0) {
       toast.error(`${p.name} is out of stock`);
       return;
@@ -167,6 +174,7 @@ function PosPage() {
       return;
     }
     cart.add(p);
+    return true;
   };
 
   /** Quantity changes are limited to the stock the shop actually has. */
@@ -185,8 +193,7 @@ function PosPage() {
       toast.error(`No product for code ${code}`);
       return;
     }
-    addProduct(p);
-    toast.success(`${p.name} added`);
+    if (addProduct(p)) toast.success(`${p.name} added`);
   };
 
   const applyCoupon = async () => {
@@ -229,6 +236,10 @@ function PosPage() {
   const resumeBill = async (id: number) => {
     const bill = await db.heldBills.get(id);
     if (!bill) return;
+    if (bill.items.length > MAX_BILL_ITEMS) {
+      toast.error(BILL_LIMIT_MESSAGE);
+      return;
+    }
     cart.load(bill.items);
     await db.heldBills.delete(id);
     toast.success("Held bill resumed");
@@ -236,6 +247,10 @@ function PosPage() {
 
   const doCheckout = async () => {
     if (!cart.items.length) return;
+    if (cart.items.length > MAX_BILL_ITEMS) {
+      toast.error(BILL_LIMIT_MESSAGE);
+      return;
+    }
     const overStock = cart.items.find((i) => {
       const p = products.find((x) => x.id === i.productId);
       return p && i.qty > p.stock;

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Customer, PaymentMethod, Product, SaleItem } from "@/lib/types";
 import { round2 } from "@/lib/format";
+import { assertBillItemLimit, MAX_BILL_ITEMS } from "@/lib/bill-limits";
 
 export interface CartLine extends SaleItem {
   free?: boolean;
@@ -42,6 +43,7 @@ export const useCart = create<CartState>()(
       pointsRedeemed: 0,
       add: (p, qty = 1) =>
         set((s) => {
+          if (p.id === undefined) return s;
           const existing = s.items.find((i) => i.productId === p.id);
           if (existing) {
             return {
@@ -52,11 +54,12 @@ export const useCart = create<CartState>()(
               ),
             };
           }
+          if (s.items.length >= MAX_BILL_ITEMS) return s;
           return {
             items: [
               ...s.items,
               {
-                productId: p.id!,
+                productId: p.id,
                 name: p.name,
                 unit: p.unit,
                 qty,
@@ -107,7 +110,10 @@ export const useCart = create<CartState>()(
       setCoupon: (coupon, couponValue) => set({ coupon, couponValue }),
       setNotes: (notes) => set({ notes }),
       setPoints: (pointsRedeemed) => set({ pointsRedeemed }),
-      load: (items) => set({ items }),
+      load: (items) => {
+        assertBillItemLimit(items);
+        set({ items });
+      },
     }),
     { name: "sgpos-cart" },
   ),

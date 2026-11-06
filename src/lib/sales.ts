@@ -1,10 +1,12 @@
 import { db } from "./db";
 import type { PaymentMethod, Sale, SaleItem, Settings } from "./types";
 import type { BillTotals } from "@/store/cart";
+import { assertBillItemLimit } from "./bill-limits";
 
 export async function getSettings(): Promise<Settings> {
   const s = await db.settings.get(1);
-  return s!;
+  if (!s) throw new Error("Shop settings are unavailable");
+  return s;
 }
 
 export async function nextInvoiceNumber(): Promise<string> {
@@ -80,6 +82,7 @@ export interface CheckoutInput {
 }
 
 export async function completeSale(input: CheckoutInput): Promise<Sale> {
+  assertBillItemLimit(input.items);
   const settings = await getSettings();
   const invoiceNo = await nextInvoiceNumber();
   const t = input.totals;
