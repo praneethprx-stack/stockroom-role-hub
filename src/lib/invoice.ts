@@ -211,7 +211,6 @@ export function printA4(sale: Sale, s: Settings) {
 }
 
 export function thermalHtml(sale: Sale, s: Settings) {
-  const w = s.thermalWidth === 58 ? 220 : 300;
   const dash = `<div class="d"></div>`;
   const totalQty = sale.items.reduce((a, i) => a + i.qty, 0);
   // GST slab summary
@@ -234,10 +233,10 @@ export function thermalHtml(sale: Sale, s: Settings) {
   return `<html><head><title>${sale.invoiceNo}</title><style>
   @page{size:${s.thermalWidth === 58 ? 58 : 80}mm auto;margin:0}
   html,body{margin:0;padding:0;height:auto}
-  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${w}px;max-width:100%;padding:4px 6px;box-sizing:border-box;color:#000}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${s.thermalWidth === 58 ? 48 : 72}mm;margin:0 auto;padding:2mm 0;box-sizing:border-box;color:#000}
   .c{text-align:center}.r{text-align:right}.b{font-weight:700}
   .d{border-top:1px dashed #000;margin:4px 0}.s{border-top:1.5px solid #000;margin:3px 0}
-  table{width:100%;border-collapse:collapse}td,th{font-size:11px;padding:1px 0;vertical-align:top}
+  table{width:100%;border-collapse:collapse}td,th{font-size:11px;padding:1px 2px;vertical-align:top;word-break:break-word}
   th{text-align:right;font-size:12px}th:first-child{text-align:left}
   .big td{font-size:17px;font-weight:700;padding:3px 0}
   </style></head><body>
