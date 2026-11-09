@@ -231,13 +231,13 @@ export function thermalHtml(sale: Sale, s: Settings) {
   const kv = (k: string, v: string, cls = "") =>
     `<tr class="${cls}"><td>${k}</td><td class="c" style="width:12px">:</td><td class="r">${v}</td></tr>`;
   return `<html><head><title>${sale.invoiceNo}</title><style>
-  @page{size:${s.thermalWidth === 58 ? 58 : 80}mm auto;margin:0}
+  @page{margin:0}
   html,body{margin:0;padding:0;height:auto}
   body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${s.thermalWidth === 58 ? 48 : 72}mm;margin:0 auto;padding:2mm 0;box-sizing:border-box;color:#000}
   .c{text-align:center}.r{text-align:right}.b{font-weight:700}
   .d{border-top:1px dashed #000;margin:4px 0}.s{border-top:1.5px solid #000;margin:3px 0}
-  table{width:100%;border-collapse:collapse}td,th{font-size:11px;padding:1px 2px;vertical-align:top;word-break:break-word}
-  th{text-align:right;font-size:12px}th:first-child{text-align:left}
+  table{width:100%;border-collapse:collapse}td,th{font-size:10px;padding:1px 1px;vertical-align:top;word-break:break-word}
+  th{text-align:right;font-size:10px}th:first-child{text-align:left}
   .big td{font-size:17px;font-weight:700;padding:3px 0}
   </style></head><body>
   ${dash}
@@ -290,26 +290,29 @@ export function thermalHtml(sale: Sale, s: Settings) {
 }
 
 export function printThermal(sale: Sale, s: Settings) {
-  // Print from a hidden iframe once the receipt has fully rendered,
-  // so the print preview never comes out blank.
+  // Open the receipt in its own window and print only after it has rendered,
+  // so the printout is never blank or cut.
   const html = thermalHtml(sale, s).replace(/<script>[\s\S]*?<\/script>/, "");
-  const frame = document.createElement("iframe");
-  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
-  document.body.appendChild(frame);
-  const doc = frame.contentWindow?.document;
-  if (!doc) return;
-  doc.open();
-  doc.write(html);
-  doc.close();
+  const win = window.open("", "_blank", "width=420,height=720");
+  if (!win) {
+    alert("Please allow pop-ups to print the bill.");
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  let printed = false;
   const go = () => {
+    if (printed) return;
+    printed = true;
     setTimeout(() => {
-      frame.contentWindow?.focus();
-      frame.contentWindow?.print();
-      setTimeout(() => frame.remove(), 60000);
-    }, 300);
+      win.focus();
+      win.print();
+    }, 500);
   };
-  if (doc.readyState === "complete") go();
-  else frame.onload = go;
+  if (win.document.readyState === "complete") go();
+  else win.addEventListener("load", go);
+  setTimeout(go, 1500);
 }
 
 export function whatsappShare(sale: Sale, s: Settings) {
