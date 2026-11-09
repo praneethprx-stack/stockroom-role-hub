@@ -232,8 +232,9 @@ export function thermalHtml(sale: Sale, s: Settings) {
   const kv = (k: string, v: string, cls = "") =>
     `<tr class="${cls}"><td>${k}</td><td class="c" style="width:12px">:</td><td class="r">${v}</td></tr>`;
   return `<html><head><title>${sale.invoiceNo}</title><style>
-  @page{margin:0}
-  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${w}px;margin:0 auto;padding:8px;color:#000}
+  @page{size:${s.thermalWidth === 58 ? 58 : 80}mm auto;margin:0}
+  html,body{margin:0;padding:0;height:auto}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${w}px;max-width:100%;padding:4px 6px;box-sizing:border-box;color:#000}
   .c{text-align:center}.r{text-align:right}.b{font-weight:700}
   .d{border-top:1px dashed #000;margin:4px 0}.s{border-top:1.5px solid #000;margin:3px 0}
   table{width:100%;border-collapse:collapse}td,th{font-size:11px;padding:1px 0;vertical-align:top}
