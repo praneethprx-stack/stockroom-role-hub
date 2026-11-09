@@ -290,10 +290,26 @@ export function thermalHtml(sale: Sale, s: Settings) {
 }
 
 export function printThermal(sale: Sale, s: Settings) {
-  const win = window.open("", "_blank", "width=400,height=700");
-  if (!win) return;
-  win.document.write(thermalHtml(sale, s));
-  win.document.close();
+  // Print from a hidden iframe once the receipt has fully rendered,
+  // so the print preview never comes out blank.
+  const html = thermalHtml(sale, s).replace(/<script>[\s\S]*?<\/script>/, "");
+  const frame = document.createElement("iframe");
+  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(frame);
+  const doc = frame.contentWindow?.document;
+  if (!doc) return;
+  doc.open();
+  doc.write(html);
+  doc.close();
+  const go = () => {
+    setTimeout(() => {
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+      setTimeout(() => frame.remove(), 60000);
+    }, 300);
+  };
+  if (doc.readyState === "complete") go();
+  else frame.onload = go;
 }
 
 export function whatsappShare(sale: Sale, s: Settings) {
