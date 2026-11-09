@@ -231,17 +231,18 @@ export function thermalHtml(sale: Sale, s: Settings) {
   const kv = (k: string, v: string, cls = "") =>
     `<tr class="${cls}"><td>${k}</td><td class="c" style="width:12px">:</td><td class="r">${v}</td></tr>`;
   return `<html><head><title>${sale.invoiceNo}</title><style>
-  @page{margin:0}
-  html,body{margin:0;padding:0;height:auto}
-  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;width:${s.thermalWidth === 58 ? 48 : 72}mm;margin:0 auto;padding:2mm 0;box-sizing:border-box;color:#000}
-  .c{text-align:center}.r{text-align:right}.b{font-weight:700}
-  .d{border-top:1px dashed #000;margin:4px 0}.s{border-top:1.5px solid #000;margin:3px 0}
-  table{width:100%;border-collapse:collapse}td,th{font-size:10px;padding:1px 1px;vertical-align:top;word-break:break-word}
-  th{text-align:right;font-size:10px}th:first-child{text-align:left}
-  .big td{font-size:17px;font-weight:700;padding:3px 0}
+  @page{margin:2mm 1mm}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;width:100%;height:auto}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;width:100%;max-width:${s.thermalWidth === 58 ? 58 : 80}mm;margin:0 auto;padding:0 1mm;color:#000;-webkit-print-color-adjust:exact}
+  .c{text-align:center}.r{text-align:right}.b{font-weight:800}
+  .d{border-top:1.5px dashed #000;margin:5px 0}.s{border-top:2px solid #000;margin:4px 0}
+  table{width:100%;border-collapse:collapse;table-layout:auto}td,th{font-size:13px;padding:1px 1px;vertical-align:top;word-break:break-word;white-space:normal}
+  th{text-align:right;font-size:13px;font-weight:800;white-space:nowrap}th:first-child{text-align:left}
+  .big td{font-size:20px;font-weight:800;padding:3px 0}
   </style></head><body>
   ${dash}
-  <div class="c b" style="font-size:17px">${s.shopName.toUpperCase()}</div>
+  <div class="c b" style="font-size:22px">${s.shopName.toUpperCase()}</div>
   <div class="c b">${s.address}</div>
   ${s.mobile ? `<div class="c b">Ph:${s.mobile}</div>` : ""}
   ${s.gstin ? `<div class="c b">GSTIN: ${s.gstin}</div>` : ""}
@@ -253,7 +254,7 @@ export function thermalHtml(sale: Sale, s: Settings) {
     <tr><th>S.No</th><th>Item</th><th>MRP</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
     <tr><td colspan="6"><div class="s"></div></td></tr>
     ${sale.items
-      .map((i, idx) => `<tr><td>${idx + 1}</td><td colspan="5">${i.name.toUpperCase()}</td></tr><tr><td></td><td></td><td class="r">${Math.round(i.mrp || i.price)}</td><td class="r">${i.qty.toFixed(3)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`)
+      .map((i, idx) => `<tr><td>${idx + 1}</td><td colspan="5">${i.name.toUpperCase()}</td></tr><tr><td></td><td></td><td class="r">${Math.round(i.mrp || i.price)}</td><td class="r">${+i.qty.toFixed(3)}</td><td class="r">${i.price.toFixed(2)}</td><td class="r">${i.total.toFixed(2)}</td></tr>`)
       .join("")}
   </table>
   ${dash}
